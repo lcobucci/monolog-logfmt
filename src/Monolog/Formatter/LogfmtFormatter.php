@@ -3,9 +3,15 @@ declare(strict_types=1);
 
 namespace Petert82\Monolog\Formatter;
 
+use DateTime;
 use Monolog\Formatter\NormalizerFormatter;
+use function array_key_exists;
+use function implode;
 use function is_bool;
 use function is_scalar;
+use function is_string;
+use function preg_match;
+use function trim;
 use function var_export;
 
 /**
@@ -13,8 +19,6 @@ use function var_export;
  *
  * @see https://brandur.org/logfmt
  * @see https://godoc.org/github.com/kr/logfmt
- *
- * @author Peter Thompson <peter.thompson@dunelm.org.uk>
  */
 class LogfmtFormatter extends NormalizerFormatter
 {
@@ -24,9 +28,9 @@ class LogfmtFormatter extends NormalizerFormatter
     protected ?string $msgKey;
 
     protected bool $timeKeyValid = true;
-    protected bool $lvlKeyValid = true;
+    protected bool $lvlKeyValid  = true;
     protected bool $chanKeyValid = true;
-    protected bool $msgKeyValid = true;
+    protected bool $msgKeyValid  = true;
 
     /**
      * Constructor params can be used to customise the keys that are used in the formatted output
@@ -43,16 +47,16 @@ class LogfmtFormatter extends NormalizerFormatter
         ?string $levelKey = 'lvl',
         ?string $channelKey = 'chan',
         ?string $messageKey = 'msg',
-        string $dateFormat = \DateTime::RFC3339
+        string $dateFormat = DateTime::RFC3339
     ) {
-        $this->timeKey = $dateTimeKey ? trim($dateTimeKey) : null;
-        $this->lvlKey = $levelKey ? trim($levelKey) : null;
-        $this->chanKey = $channelKey ? trim($channelKey) : null;
-        $this->msgKey = $messageKey ? trim($messageKey) : null;
+        $this->timeKey      = $dateTimeKey ? trim($dateTimeKey) : null;
+        $this->lvlKey       = $levelKey ? trim($levelKey) : null;
+        $this->chanKey      = $channelKey ? trim($channelKey) : null;
+        $this->msgKey       = $messageKey ? trim($messageKey) : null;
         $this->timeKeyValid = $this->isValidIdent($this->timeKey);
-        $this->lvlKeyValid = $this->isValidIdent($this->lvlKey);
+        $this->lvlKeyValid  = $this->isValidIdent($this->lvlKey);
         $this->chanKeyValid = $this->isValidIdent($this->chanKey);
-        $this->msgKeyValid = $this->isValidIdent($this->msgKey);
+        $this->msgKeyValid  = $this->isValidIdent($this->msgKey);
 
         parent::__construct($dateFormat);
     }
@@ -66,16 +70,16 @@ class LogfmtFormatter extends NormalizerFormatter
 
         $pairs = [];
         if ($this->timeKeyValid) {
-            $pairs[$this->timeKey] = $this->timeKey.'='.$vars['datetime'];
+            $pairs[$this->timeKey] = $this->timeKey . '=' . $vars['datetime'];
         }
         if ($this->lvlKeyValid) {
-            $pairs[$this->lvlKey] = $this->lvlKey.'='.$vars['level_name'];
+            $pairs[$this->lvlKey] = $this->lvlKey . '=' . $vars['level_name'];
         }
         if ($this->chanKeyValid) {
-            $pairs[$this->chanKey] = $this->chanKey.'='.$this->stringifyVal($vars['channel']);
+            $pairs[$this->chanKey] = $this->chanKey . '=' . $this->stringifyVal($vars['channel']);
         }
         if ($this->msgKeyValid) {
-            $pairs[$this->msgKey] = $this->msgKey.'='.$this->stringifyVal($vars['message']);
+            $pairs[$this->msgKey] = $this->msgKey . '=' . $this->stringifyVal($vars['message']);
         }
 
         foreach ($vars['context'] as $ctxKey => $ctxVal) {
@@ -85,7 +89,7 @@ class LogfmtFormatter extends NormalizerFormatter
             if (! $this->isValidIdent($ctxKey)) {
                 continue;
             }
-            $pairs[$ctxKey] = $ctxKey.'='.$this->stringifyVal($ctxVal);
+            $pairs[$ctxKey] = $ctxKey . '=' . $this->stringifyVal($ctxVal);
         }
 
         foreach ($vars['extra'] as $extraKey => $extraVal) {
@@ -95,10 +99,10 @@ class LogfmtFormatter extends NormalizerFormatter
             if (! $this->isValidIdent($extraKey)) {
                 continue;
             }
-            $pairs[$extraKey] = $extraKey.'='.$this->stringifyVal($extraVal);
+            $pairs[$extraKey] = $extraKey . '=' . $this->stringifyVal($extraVal);
         }
 
-        return implode(' ', $pairs)."\n";
+        return implode(' ', $pairs) . "\n";
     }
 
     /**
@@ -143,7 +147,7 @@ class LogfmtFormatter extends NormalizerFormatter
 
     protected function convertToString($data): string
     {
-        if (null === $data || is_bool($data)) {
+        if ($data === null || is_bool($data)) {
             return var_export($data, true);
         }
 
